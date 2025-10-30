@@ -33,94 +33,141 @@ def random_cropping_bbox(img_shape=(256,256), mask_mode='onedirection'):
     return (top, left, height, width)
 
 def random_bbox(img_shape=(256,256), max_bbox_shape=(128, 128), max_bbox_delta=40, min_margin=20):
-    """Generate a random bbox for the mask on a given image.
+    """
+    Generate a random bbox for the mask on a given image.
+
+    在给定的图像上生成一个随机的边界框（bbox）用于掩码。
 
     In our implementation, the max value cannot be obtained since we use
     `np.random.randint`. And this may be different with other standard scripts
     in the community.
 
+    在我们的实现中，由于我们使用了 `np.random.randint`，所以无法获得最大值。这可能与社区中的其他标准脚本不同。
+
     Args:
         img_shape (tuple[int]): The size of a image, in the form of (h, w).
+        图像的尺寸，形式为 (h, w)。
+
         max_bbox_shape (int | tuple[int]): Maximum shape of the mask box,
             in the form of (h, w). If it is an integer, the mask box will be
             square.
+        掩码框的最大形状，形式为 (h, w)。如果它是一个整数，则掩码框将是正方形的。
+
         max_bbox_delta (int | tuple[int]): Maximum delta of the mask box,
             in the form of (delta_h, delta_w). If it is an integer, delta_h
             and delta_w will be the same. Mask shape will be randomly sampled
             from the range of `max_bbox_shape - max_bbox_delta` and
             `max_bbox_shape`. Default: (40, 40).
+        掩码框的最大增量，形式为 (delta_h, delta_w)。如果它是一个整数，则 delta_h 和 delta_w 将相同。掩码形状将从 `max_bbox_shape - max_bbox_delta` 和 `max_bbox_shape` 的范围内随机采样。默认值：(40, 40)。
+
         min_margin (int | tuple[int]): The minimum margin size from the
             edges of mask box to the image boarder, in the form of
             (margin_h, margin_w). If it is an integer, margin_h and margin_w
             will be the same. Default: (20, 20).
+        从掩码框边缘到图像边界的最小边距大小，形式为 (margin_h, margin_w)。如果它是一个整数，则 margin_h 和 margin_w 将相同。默认值：(20, 20)。
 
     Returns:
         tuple[int]: The generated box, (top, left, h, w).
+        返回生成的边界框，(顶部坐标，左侧坐标，高度，宽度)。
     """
-    if not isinstance(max_bbox_shape, tuple):
+    if not isinstance(max_bbox_shape, tuple): # 如果 max_bbox_shape 不是元组类型，则将其转换为元组形式 (max_bbox_shape, max_bbox_shape)
         max_bbox_shape = (max_bbox_shape, max_bbox_shape)
-    if not isinstance(max_bbox_delta, tuple):
+    if not isinstance(max_bbox_delta, tuple):  # 如果 max_bbox_delta 不是元组类型，则将其转换为元组形式 (max_bbox_delta, max_bbox_delta)
         max_bbox_delta = (max_bbox_delta, max_bbox_delta)
-    if not isinstance(min_margin, tuple):
+    if not isinstance(min_margin, tuple):  # 如果 min_margin 不是元组类型，则将其转换为元组形式 (min_margin, min_margin)
         min_margin = (min_margin, min_margin)
         
-    img_h, img_w = img_shape[:2]
-    max_mask_h, max_mask_w = max_bbox_shape
-    max_delta_h, max_delta_w = max_bbox_delta
-    margin_h, margin_w = min_margin
+    img_h, img_w = img_shape[:2]    # 获取图像的高度和宽度
+    max_mask_h, max_mask_w = max_bbox_shape # 获取最大掩码框的高度和宽度
+    max_delta_h, max_delta_w = max_bbox_delta  # 获取最大掩码框的增量高度和宽度
+    margin_h, margin_w = min_margin # 获取最小边距的高度和宽度
 
+    # 如果最大掩码框的高度或宽度大于图像的高度或宽度，则抛出 ValueError 异常
     if max_mask_h > img_h or max_mask_w > img_w:
         raise ValueError(f'mask shape {max_bbox_shape} should be smaller than '
                          f'image shape {img_shape}')
+    # 如果最大掩码框的增量高度或宽度的一半乘以 2 大于等于最大掩码框的高度或宽度，则抛出 ValueError 异常
     if (max_delta_h // 2 * 2 >= max_mask_h
             or max_delta_w // 2 * 2 >= max_mask_w):
         raise ValueError(f'mask delta {max_bbox_delta} should be smaller than'
                          f'mask shape {max_bbox_shape}')
+    # 如果图像的高度减去最大掩码框的高度小于 2 倍的最小边距高度，或者图像的宽度减去最大掩码框的宽度小于 2 倍的最小边距宽度，则抛出 ValueError 异常
     if img_h - max_mask_h < 2 * margin_h or img_w - max_mask_w < 2 * margin_w:
         raise ValueError(f'Margin {min_margin} cannot be satisfied for img'
                          f'shape {img_shape} and mask shape {max_bbox_shape}')
 
-    # get the max value of (top, left)
+    # get the max value of (top, left) # 计算顶部坐标和左侧坐标的最大值
     max_top = img_h - margin_h - max_mask_h
     max_left = img_w - margin_w - max_mask_w
-    # randomly select a (top, left)
+    # randomly select a (top, left)# 随机生成顶部坐标和左侧坐标
     top = np.random.randint(margin_h, max_top)
     left = np.random.randint(margin_w, max_left)
     # randomly shrink the shape of mask box according to `max_bbox_delta`
-    # the center of box is fixed
+    # the center of box is fixed # 随机生成增量高度和增量宽度
     delta_top = np.random.randint(0, max_delta_h // 2 + 1)
     delta_left = np.random.randint(0, max_delta_w // 2 + 1)
+    # 随机生成增量高度和增量宽度
     top = top + delta_top
     left = left + delta_left
+    # 计算掩码框的高度和宽度
     h = max_mask_h - delta_top
     w = max_mask_w - delta_left
-    return (top, left, h, w)
+    return (top, left, h, w) # 返回生成的边界框 (top, left, h, w)
 
+def head_pad_crop(img_shape, dtype='uint8'):
+    height, width = img_shape[:2]  # 获取图像的高度和宽度 height=768 width=1024
+    mask = np.zeros((height, width, 1), dtype=dtype)  # 创建一个全零的掩码数组，形状为 (height, width, 1)，数据类型为指定的 dtype
+
+    # 适配768*1024尺寸
+    # mask[:, 0:128, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024
+    # mask[:, 896:1024, :] = 1
+    # mask[:, 0:180, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024
+    # mask[:, 844:1024, :] = 1
+
+    # # 适配192*256尺寸
+    # # mask[:, 0:32, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024，中心有效区域是192*192
+    # # mask[:, 224:256, :] = 1
+    # mask[:, 0:100, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024，中心有效区域是192*156
+    # mask[:, 547:647, :] = 1
+    # mask[:, 0:50, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024，中心有效区域是192*156
+    # mask[:, 270:320, :] = 1
+    # mask[:, 0:40, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024，中心有效区域是192*156
+    # mask[:, 216:256, :] = 1
+    # mask[:, 0:50, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024resize成了192*256，中心有效区域是192*156
+    # mask[:, 206:256, :] = 1
+    mask[:, 0:50, :] = 1  # 将掩码数组中对应边界框的区域设置为 1，对应768*1024，中心有效区域是192*156
+    mask[:, 206:256, :] = 1
+    return mask  # 返回生成的掩码
 
 def bbox2mask(img_shape, bbox, dtype='uint8'):
-    """Generate mask in ndarray from bbox.
+    """Generate mask in ndarray from bbox.从边界框（bbox）生成 NumPy 数组形式的掩码。
 
     The returned mask has the shape of (h, w, 1). '1' indicates the
     hole and '0' indicates the valid regions.
+    返回的掩码形状为 (h, w, 1)。'1' 表示空洞，'0' 表示有效区域。
 
     We prefer to use `uint8` as the data type of masks, which may be different
     from other codes in the community.
+    我们倾向于使用 `uint8` 作为掩码的数据类型，这可能与社区中的其他代码不同。
+
 
     Args:
-        img_shape (tuple[int]): The size of the image.
-        bbox (tuple[int]): Configuration tuple, (top, left, height, width)
-        dtype (str): Indicate the data type of returned masks. Default: 'uint8'
+        img_shape (tuple[int]): The size of the image.        图像的尺
+        bbox (tuple[int]): Configuration tuple, (top, left, height, width) 配置元组，(顶部坐标，左侧坐标，高度，宽度)
+        dtype (str): Indicate the data type of returned masks. Default: 'uint8'  指示返回的掩码的数据类型。默认值：'uint8'
+
 
     Return:
         numpy.ndarray: Mask in the shape of (h, w, 1).
+        NumPy 数组：形状为 (h, w, 1) 的掩码。
     """
 
-    height, width = img_shape[:2]
+    height, width = img_shape[:2]    # 获取图像的高度和宽度
 
-    mask = np.zeros((height, width, 1), dtype=dtype)
-    mask[bbox[0]:bbox[0] + bbox[2], bbox[1]:bbox[1] + bbox[3], :] = 1
+    mask = np.zeros((height, width, 1), dtype=dtype)# 创建一个全零的掩码数组，形状为 (height, width, 1)，数据类型为指定的 dtype
+    mask[bbox[0]:bbox[0] + bbox[2], bbox[1]:bbox[1] + bbox[3], :] = 1# 将掩码数组中对应边界框的区域设置为 1
 
-    return mask
+    return mask # 返回生成的掩码
 
 
 def brush_stroke_mask(img_shape,

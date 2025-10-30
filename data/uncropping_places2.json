@@ -1,6 +1,6 @@
 {
     "name": "uncropping_places2",
-    "gpu_ids": [1],
+    "gpu_ids": [0,1,2],
     "seed" : -1,
     "finetune_norm": false,
 
@@ -10,7 +10,7 @@
         "tb_logger": "tb_logger",
         "results": "results",
         "checkpoint": "checkpoint",
-        "resume_state": "experiments/train_uncropping_places2_251023_092307/checkpoint/1000"
+        "resume_state": "experiments/train_uncropping_places2_251016_165026/checkpoint/500"
     },
 
     "datasets": {
@@ -18,7 +18,7 @@
             "which_dataset": {
                 "name": ["data.dataset", "UncroppingDataset"],
                 "args":{
-                    "data_root": "data/train_head_data_png16-nobed.flist",
+                    "data_root": "data/train_head_16bit.flist",
                     "data_len": -1,
                     "mask_config": {
                         "mask_mode": "head_pad"
@@ -47,7 +47,7 @@
             "which_dataset": {
                 "name": "UncroppingDataset",
                 "args":{
-                    "data_root": "data/5000voluneer_pad.flist",
+                    "data_root": "data/5000voluneer-tmp.flist",
                     "mask_config": {
                         "mask_mode": "head_pad",
                         "shape": []
@@ -65,7 +65,6 @@
     },
 
     "model": {
-        "use_amp": false,
         "which_model": {
             "name": ["models.model", "Palette"],
             "args": {

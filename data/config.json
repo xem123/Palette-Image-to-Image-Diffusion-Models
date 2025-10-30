@@ -1,40 +1,43 @@
 {
-    "name": "uncropping_places2",
-    "gpu_ids": [1],
-    "seed" : -1,
+    "name": "train_uncropping_places2",
+    "gpu_ids": [
+        2
+    ],
+    "seed": -1,
     "finetune_norm": false,
-
     "path": {
         "base_dir": "experiments",
         "code": "code",
         "tb_logger": "tb_logger",
         "results": "results",
         "checkpoint": "checkpoint",
-        "resume_state": "experiments/train_uncropping_places2_251023_092307/checkpoint/1000"
+        "resume_state": null
     },
-
     "datasets": {
         "train": {
             "which_dataset": {
-                "name": ["data.dataset", "UncroppingDataset"],
-                "args":{
-                    "data_root": "data/train_head_data_png16-nobed.flist",
+                "name": [
+                    "data.dataset",
+                    "UncroppingDataset"
+                ],
+                "args": {
+                    "data_root": "data/train_head_16bit_test.flist",
                     "data_len": -1,
                     "mask_config": {
                         "mask_mode": "head_pad"
                     }
                 }
             },
-            "dataloader":{
+            "dataloader": {
                 "validation_split": 2,
-                "args":{
-                    "batch_size": 32,
+                "args": {
+                    "batch_size": 16,
                     "num_workers": 4,
                     "shuffle": true,
                     "pin_memory": true,
                     "drop_last": true
                 },
-                "val_args":{
+                "val_args": {
                     "batch_size": 1,
                     "num_workers": 4,
                     "shuffle": false,
@@ -46,16 +49,16 @@
         "test": {
             "which_dataset": {
                 "name": "UncroppingDataset",
-                "args":{
-                    "data_root": "data/5000voluneer_pad.flist",
+                "args": {
+                    "data_root": "data/test.flist",
                     "mask_config": {
-                        "mask_mode": "head_pad",
+                        "mask_mode": "onedirection",
                         "shape": []
                     }
                 }
             },
-            "dataloader":{
-                "args":{
+            "dataloader": {
+                "args": {
                     "batch_size": 2,
                     "num_workers": 4,
                     "pin_memory": true
@@ -63,11 +66,12 @@
             }
         }
     },
-
     "model": {
-        "use_amp": false,
         "which_model": {
-            "name": ["models.model", "Palette"],
+            "name": [
+                "models.model",
+                "Palette"
+            ],
             "args": {
                 "sample_num": 8,
                 "task": "uncropping",
@@ -77,13 +81,19 @@
                     "ema_decay": 0.9999
                 },
                 "optimizers": [
-                    { "lr": 5e-5, "weight_decay": 0}
+                    {
+                        "lr": 5e-05,
+                        "weight_decay": 0
+                    }
                 ]
             }
         },
         "which_networks": [
             {
-                "name": ["models.network", "Network"],
+                "name": [
+                    "models.network",
+                    "Network"
+                ],
                 "args": {
                     "init_type": "kaiming",
                     "module_name": "guided_diffusion",
@@ -109,13 +119,13 @@
                         "train": {
                             "schedule": "linear",
                             "n_timestep": 2000,
-                            "linear_start": 1e-6,
+                            "linear_start": 1e-06,
                             "linear_end": 0.01
                         },
                         "test": {
                             "schedule": "linear",
                             "n_timestep": 1000,
-                            "linear_start": 1e-4,
+                            "linear_start": 0.0001,
                             "linear_end": 0.09
                         }
                     }
@@ -123,7 +133,13 @@
             }
         ],
         "which_optimizers": [
-            { "name": "Adam", "args":{ "lr": 5e-5, "weight_decay": 0}}
+            {
+                "name": "Adam",
+                "args": {
+                    "lr": 5e-05,
+                    "weight_decay": 0
+                }
+            }
         ],
         "which_lr_schedulers": [
             {}
@@ -135,20 +151,20 @@
             "mae"
         ]
     },
-
     "train": {
-        "n_epoch": 1000,
-        "n_iter": 330000000,
-        "val_epoch": 25,
-        "save_checkpoint_epoch": 250,
+        "n_epoch": 10,
+        "n_iter": 33000000,
+        "val_epoch": 5,
+        "save_checkpoint_epoch": 1,
         "log_iter": 5,
-        "tensorboard" : true
+        "tensorboard": true
     },
-
     "debug": {
         "val_epoch": 1,
         "save_checkpoint_epoch": 1,
         "log_iter": 10,
         "debug_split": 50
-    }
+    },
+    "phase": "train",
+    "distributed": false
 }

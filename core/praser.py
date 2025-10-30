@@ -9,38 +9,47 @@ from types  import FunctionType
 import shutil
 def init_obj(opt, logger, *args, default_file_name='default file', given_module=None, init_type='Network', **modify_kwargs):
     """
+    4.2.1 + 4.3.1、初始化阶段数据集
     finds a function handle with the name given as 'name' in config,
     and returns the instance initialized with corresponding args.
+    在配置中查找名称为'name'的函数句柄，并返回使用相应参数初始化的实例。
     """ 
-    if opt is None or len(opt)<1:
+    if opt is None or len(opt)<1:# 如果选项为空或长度小于 1
         logger.info('Option is None when initialize {}'.format(init_type))
         return None
     
     ''' default format is dict with name key '''
+    '''默认格式是带有"name"键的字典'''
     if isinstance(opt, str):
         opt = {'name': opt}
         logger.warning('Config is a str, converts to a dict {}'.format(opt))
 
-    name = opt['name']
+    name = opt['name'] # 4.2.1 = name : ['data.dataset', 'UncroppingDataset']    4.3.1 = name :['models.network', 'Network']
     ''' name can be list, indicates the file and class name of function '''
-    if isinstance(name, list):
-        file_name, class_name = name[0], name[1]
+    '''名称可以是列表，表示函数的文件名和类名'''
+    if isinstance(name, list):  # 如果名称是列表
+        file_name, class_name = name[0], name[1]  # 分别获取文件名和类名 4.2.1=[class_name:"UncroppingDataset"  file_name:"data.dataset"] 4.3.1=[class_name:"'Network'"  file_name:"'models.network'"]
     else:
-        file_name, class_name = default_file_name, name
+        file_name, class_name = default_file_name, name  # 否则使用默认文件名和给定的名称
     try:
-        if given_module is not None:
+        if given_module is not None: # 如果给定了模块
             module = given_module
         else:
-            module = importlib.import_module(file_name)
+            module = importlib.import_module(file_name) #4.3.1 跳进network.py中class Network(BaseNetwork)，初始化所有函数
         
         attr = getattr(module, class_name)
+        # 4.2.1 = kwargs:{'data_root': 'data/train_head.flist', 'data_len': -1, 'mask_config': {'mask_mode': 'head_pad'}}
+        # 4.3.1 = kwargs:{'init_type': 'kaiming', 'module_name': 'guided_diffusion', 'unet': {'in_channel': 6, 'out_channel': 3, 'inner_channel': 64, 'channel_mults': [1, 2, 4, 8], 'attn_res': [16], 'num_head_channels': 32, 'res_blocks': 2, 'dropout': 0.2, 'image_size': 256}, 'beta_schedule': {'train': {'schedule': 'linear', 'n_timestep': 2000, 'linear_start': 1e-06, 'linear_end': 0.01}, 'test': {'schedule': 'linear', 'n_timestep': 1000, 'linear_start': 0.0001, 'linear_end': 0.09}}}
         kwargs = opt.get('args', {})
         kwargs.update(modify_kwargs)
         ''' import class or function with args '''
-        if isinstance(attr, type): 
-            ret = attr(*args, **kwargs)
-            ret.__name__  = ret.__class__.__name__
-        elif isinstance(attr, FunctionType): 
+        '''使用参数导入类或函数'''
+        if isinstance(attr, type):  # 如果属性是类（attr中的class_name是"UncroppingDataset"，是dataset.py函数中的类）
+            ret = attr(*args, **kwargs)  # 实例化类
+            # 4.3.2 运行network.py函数class Network(BaseNetwork)中的def __init__()函数
+            # 4.2.2 运行dataset.py函数class UncroppingDataset(data.Dataset)中的def __init__()函数
+            ret.__name__ = ret.__class__.__name__
+        elif isinstance(attr, FunctionType):
             ret = partial(attr, *args, **kwargs)
             ret.__name__  = attr.__name__
             # ret = attr
